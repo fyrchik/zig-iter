@@ -1,30 +1,28 @@
 const std = @import("std");
+const debug = std.debug;
+const assert = debug.assert;
 const testing = std.testing;
 
 pub fn main() anyerror!void {
-    const lst = []i32{1,2,3};
-
-    var dup = duplicate(i32, 3, 2, lst).init();
-    var iter = dup.iterator();
-    while (iter.next()) |item| {
-        std.debug.warn("{}\n", item);
-    }
+    std.debug.warn("main");
 }
 
-fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type {
+fn duplicate(comptime T: type) type {
     return struct {
         const Self = @This();
 
-        list: [len]T,
+        list: []const T,
+        n: usize,
 
-        pub fn init() Self {
+        pub fn init(n: usize, lst: []const T) Self {
             return Self{
                 .list = lst,
+                .n = n,
             };
         }
 
         pub const Iterator = struct {
-            list: [len]T,
+            list: []const T,
             item: ?T,
             index: usize,
             n: usize,
@@ -38,20 +36,21 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
                 }
                 it.count = 1;
                 it.index = it.index+1;
-                if (it.index == len) {
+                if (it.index == it.list.len) {
                     it.item = null;
                     return null;
-                } else if (it.index < len) {
+                }
+                if (it.index < it.list.len) {
                     it.item = it.list[it.index];
                     return it.item;
                 }
-                return null;
+                unreachable;
             }
         };
 
         pub fn iterator(self: *Self) Iterator {
             var item: ?T = null;
-            if (len != 0) {
+            if (self.list.len != 0) {
                 item = self.list[0];
             }
             return Iterator{
@@ -59,7 +58,7 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
                 .list = self.list,
                 .index = 0,
                 .count = 0,
-                .n = n,
+                .n = self.n,
             };
         }
     };
@@ -68,8 +67,8 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
 
 test "duplicate.iterator" {
     const lst = []i32{1,2,3};
-    var iter = duplicate(i32, 3, 2, lst)
-        .init()
+    var iter = duplicate(i32)
+        .init(2, lst[0..])
         .iterator();
 
     testing.expect(iter.next().? == 1);
@@ -81,8 +80,8 @@ test "duplicate.iterator" {
     testing.expect(iter.next() == null);
     testing.expect(iter.next() == null);
 
-    var iter2 = duplicate(i32, 0, 2, []i32{})
-        .init()
+    var iter2 = duplicate(i32)
+        .init(2, []const i32{})
         .iterator();
     testing.expect(iter2.next() == null);
     testing.expect(iter2.next() == null);
