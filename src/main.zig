@@ -1,4 +1,5 @@
 const std = @import("std");
+const testing = std.testing;
 
 pub fn main() anyerror!void {
     const lst = []i32{1,2,3};
@@ -31,7 +32,7 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
         
             pub fn next(it: *Iterator) ?T {
                 if (it.item == null) return null;
-                if (it.count <= it.n) {
+                if (it.count < it.n) {
                     it.count = it.count+1;
                     return it.item;
                 }
@@ -40,9 +41,11 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
                 if (it.index == len) {
                     it.item = null;
                     return null;
+                } else if (it.index < len) {
+                    it.item = it.list[it.index];
+                    return it.item;
                 }
-                it.item = it.list[it.index];
-                return it.item;
+                return null;
             }
         };
 
@@ -60,4 +63,27 @@ fn duplicate(comptime T: type, comptime len: usize, n: usize, lst: [len]T) type 
             };
         }
     };
+}
+
+
+test "duplicate.iterator" {
+    const lst = []i32{1,2,3};
+    var iter = duplicate(i32, 3, 2, lst)
+        .init()
+        .iterator();
+
+    testing.expect(iter.next().? == 1);
+    testing.expect(iter.next().? == 1);
+    testing.expect(iter.next().? == 2);
+    testing.expect(iter.next().? == 2);
+    testing.expect(iter.next().? == 3);
+    testing.expect(iter.next().? == 3);
+    testing.expect(iter.next() == null);
+    testing.expect(iter.next() == null);
+
+    var iter2 = duplicate(i32, 0, 2, []i32{})
+        .init()
+        .iterator();
+    testing.expect(iter2.next() == null);
+    testing.expect(iter2.next() == null);
 }
