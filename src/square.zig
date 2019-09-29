@@ -52,14 +52,7 @@ fn square(list: var) squareT(@typeOf(list).Child).Iterator {
     return squareT(@typeOf(list).Child).init(list).iterator();
 }
 
-test "square.iterator" {
-    const lst = []i32{1,2,3};
-    const TT = squareT(i32).Tuple;
-    
-    var iter = square(lst[0..1]);
-    var expected = []TT{
-        TT{._1 = 1, ._2 = 1},
-    };
+fn compare(comptime T: type, iter: *squareT(T).Iterator, expected: []const squareT(T).Tuple) void {
     var i: usize = 0;
     while (i < expected.len) {
         var item = iter.next().?;
@@ -68,21 +61,25 @@ test "square.iterator" {
         i = i + 1;
     }
     testing.expect(iter.next() == null);
+}
+
+test "square.iterator" {
+    const lst = []i32{1,2,3};
+    const TT = squareT(i32).Tuple;
+    
+    var iter = square(lst[0..1]);
+    var expected: []const TT = []TT{
+        TT{._1 = 1, ._2 = 1},
+    };
+    compare(i32, &iter, expected[0..]);
 
     iter = square(lst[0..]);
-    var expected2 = []TT{
+    expected = []TT{
         TT{._1 = 1, ._2 = 1}, TT{._1 = 1, ._2 = 2}, TT{._1 = 1, ._2 = 3}, 
         TT{._1 = 2, ._2 = 1}, TT{._1 = 2, ._2 = 2}, TT{._1 = 2, ._2 = 3}, 
         TT{._1 = 3, ._2 = 1}, TT{._1 = 3, ._2 = 2}, TT{._1 = 3, ._2 = 3}, 
     };
-    i = 0;
-    while (i < expected2.len) {
-        var item = iter.next().?;
-        testing.expect(expected2[i]._1 == item._1);
-        testing.expect(expected2[i]._2 == item._2);
-        i = i + 1;
-    }
-    testing.expect(iter.next() == null);
+    compare(i32, &iter, expected[0..]);
 }
 
 test "square.null" {
