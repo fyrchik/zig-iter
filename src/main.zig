@@ -12,12 +12,10 @@ fn duplicate(comptime T: type) type {
         const Self = @This();
 
         list: []const T,
-        n: usize,
 
-        pub fn init(n: usize, lst: []const T) Self {
+        pub fn init(list: []T) Self {
             return Self{
-                .list = lst,
-                .n = n,
+                .list = list,
             };
         }
 
@@ -48,9 +46,9 @@ fn duplicate(comptime T: type) type {
             }
         };
 
-        pub fn iterator(self: *Self) Iterator {
+        pub fn iterator(self: *Self, n: usize) Iterator {
             var item: ?T = null;
-            if (self.list.len != 0) {
+            if (self.list.len != 0 and n != 0) {
                 item = self.list[0];
             }
             return Iterator{
@@ -58,7 +56,7 @@ fn duplicate(comptime T: type) type {
                 .list = self.list,
                 .index = 0,
                 .count = 0,
-                .n = self.n,
+                .n = n,
             };
         }
     };
@@ -66,23 +64,34 @@ fn duplicate(comptime T: type) type {
 
 
 test "duplicate.iterator" {
-    const lst = []i32{1,2,3};
-    var iter = duplicate(i32)
-        .init(2, lst[0..])
-        .iterator();
+    var lst = []i32{1,2,3};
+    var kek: []i32 = lst[0..];
+    var list = duplicate(i32).init(kek);
 
-    testing.expect(iter.next().? == 1);
-    testing.expect(iter.next().? == 1);
-    testing.expect(iter.next().? == 2);
-    testing.expect(iter.next().? == 2);
-    testing.expect(iter.next().? == 3);
-    testing.expect(iter.next().? == 3);
-    testing.expect(iter.next() == null);
-    testing.expect(iter.next() == null);
+    var iter0 = list.iterator(0);
+    testing.expect(iter0.next() == null);
+    testing.expect(iter0.next() == null);
 
-    var iter2 = duplicate(i32)
-        .init(2, []const i32{})
-        .iterator();
+    var iter1 = list.iterator(1);
+    testing.expect(iter1.next().? == 1);
+    testing.expect(iter1.next().? == 2);
+    testing.expect(iter1.next().? == 3);
+    testing.expect(iter1.next() == null);
+    testing.expect(iter1.next() == null);
+
+    var iter2 = list.iterator(2);
+    testing.expect(iter2.next().? == 1);
+    testing.expect(iter2.next().? == 1);
+    testing.expect(iter2.next().? == 2);
+    testing.expect(iter2.next().? == 2);
+    testing.expect(iter2.next().? == 3);
+    testing.expect(iter2.next().? == 3);
     testing.expect(iter2.next() == null);
     testing.expect(iter2.next() == null);
+}
+
+test "duplicate.null" {
+    var iter = duplicate(i32).init([]i32{}).iterator(3);
+    testing.expect(iter.next() == null);
+    testing.expect(iter.next() == null);
 }
